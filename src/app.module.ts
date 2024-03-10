@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { FilmsModule } from './films/films.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HelpersModule } from './helpers/helpers.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       autoLoadEntities: true ,
       synchronize : true  //no recomendable en produccion 
     }),
-    FilmsModule],
+    FilmsModule,
+    HelpersModule],
   controllers: [AppController],
   providers: [AppService],
 })
