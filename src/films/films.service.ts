@@ -30,19 +30,30 @@ export class FilmsService {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const{limit = 5 , skip=0, order='ASC'} = paginationDto;
+    const{limit = 5 , skip=0, order='ASC', query} = paginationDto;
     
-    return await this.filmsRepository.find({
-      skip,
-      take:limit,
-      order:{
-        episode_id:order as FindOptionsOrderValue
-      }
+    if (!query) {
 
-    });
+      return await this.filmsRepository.find({
+            skip,
+            take:limit,
+            order:{
+              episode_id:order as FindOptionsOrderValue
+            } });
+    } else {
+      let films: Film[];
+      const queryBuilder = this.filmsRepository.createQueryBuilder('film');
+      films = await queryBuilder
+       .where('LOWER(director) like :director', {director:`%${query.toLocaleLowerCase()}%`})
+       .orWhere('LOWER(title) like :title', {title:`%${query.toLocaleLowerCase()}%`})
+       .limit(limit)
+       .skip(skip)
+     //  .orderBy('episode_id','ASC')
+       .getMany();
 
+      return films; 
 
-
+    }
 
 //    return this.filmsRepository.find({});
   }
