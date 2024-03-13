@@ -31,27 +31,37 @@ export class FilmsService {
 
   async findAll(paginationDto: PaginationDto) {
     const{limit = 5 , skip=0, order='ASC', query} = paginationDto;
+    let films : Film[];
+    let count : number;
     
     if (!query) {
+      //return await this.filmsRepository.find({skip,take:limit,order:{episode_id:order as FindOptionsOrderValue } });
 
-      return await this.filmsRepository.find({
-            skip,
-            take:limit,
-            order:{
-              episode_id:order as FindOptionsOrderValue
-            } });
+      [films,count] =await Promise.all([
+          await this.filmsRepository.find({
+                      skip,
+                      take:limit,
+                      order:{
+                        episode_id:order as FindOptionsOrderValue
+                      } }),
+          this.filmsRepository.count()
+      ]);
+      return {films,count} 
     } else {
       let films: Film[];
       const queryBuilder = this.filmsRepository.createQueryBuilder('film');
-      films = await queryBuilder
+      [films,count] = await queryBuilder
        .where('LOWER(director) like :director', {director:`%${query.toLocaleLowerCase()}%`})
        .orWhere('LOWER(title) like :title', {title:`%${query.toLocaleLowerCase()}%`})
        .limit(limit)
-       .skip(skip)
-     //  .orderBy('episode_id','ASC')
-       .getMany();
+       .offset(skip)
+       //.skip(skip)
+        .orderBy('episode_id', order as 'ASC'|'DESC')
+        .getManyAndCount();
+       //.getMany();
 
-      return films; 
+      //return films; 
+      return {films,count}
 
     }
 
@@ -74,12 +84,29 @@ export class FilmsService {
 
   }
 
-  update(id: number, updateFilmDto: UpdateFilmDto) {
-    return `This action updates a #${id} film`;
+  async update(id: string, updateFilmDto: UpdateFilmDto) {
+   const film = await this.filmsRepository.preload({
+      id,
+      ... updateFilmDto
+
+   });
+    
+   if (!film) throw new NotFoundException(`Film with id ${id} not found`);
+
+   try{
+    return await this.filmsRepository.save(film);
+    
+   }catch(error ) {
+     this.manageDBExeptions(error);
+   }
+
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} film`;
+  async remove(id: string) {
+    const film = await this.findOne(id);
+    await this.filmsRepository.remove(film);
+
+
   }
 
   private manageDBExeptions(error: any){

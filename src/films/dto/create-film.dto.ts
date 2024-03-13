@@ -1,4 +1,6 @@
+import { Type } from "class-transformer";
 import { IsArray, IsDate, IsNumber, IsOptional, IsPositive, IsString,MinLength } from "class-validator";
+import { TypeORMError } from "typeorm";
 
 export class CreateFilmDto {
     
@@ -24,6 +26,7 @@ export class CreateFilmDto {
 
     @IsDate()
     @IsOptional()
+    @Type(() => Date)
     release_date:Date;
 
     @IsString()
